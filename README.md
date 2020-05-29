@@ -6,7 +6,7 @@ and just goes into an infinite loop of writing and reading.
 The execution will stop if you CTRL+C out of it, or touch a file called
 disable-test.txt in the current working dir.
 
-In the current working dir, this reads a simple conf file that specifies the database url to connect to.
+In the current working dir, this reads a simple conf file named db-test.ini that specifies the database url to connect to.
 
 ## Example ini config
 [config]

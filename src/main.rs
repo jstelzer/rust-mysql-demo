@@ -4,7 +4,6 @@ extern crate ini;
 use ini::Ini;
 use mysql::*;
 use mysql::prelude::*;
-//use mysql::Error;
 
 #[derive(Debug, PartialEq, Eq)]
 struct Payment {
@@ -12,6 +11,7 @@ struct Payment {
     amount: i32,
     account_name: Option<String>,
 }
+
 fn check_db_pulse(mut conn: mysql::PooledConn){
 
     // Let's create a table for payments.
@@ -23,7 +23,7 @@ fn check_db_pulse(mut conn: mysql::PooledConn){
             account_name text,
             PRIMARY KEY (row_num)
         )").unwrap();
-
+    // mocked up payment data but it'll write to the db...
     let payments = vec![
         Payment { customer_id: 1, amount: 2, account_name: None },
         Payment { customer_id: 3, amount: 4, account_name: Some("foo".into()) },
@@ -44,20 +44,31 @@ fn check_db_pulse(mut conn: mysql::PooledConn){
     ).expect("Inserts failed");
 
     // Let's select payments from database. Type inference should do the trick here.
+    // i was originally getting it all, but that just slows down over time. So I capped it.
     let _selected_payments = conn
         .query_map(
-            "SELECT customer_id, amount, account_name from payment",
+            "SELECT customer_id, amount, account_name from payment limit 10",
             |(customer_id, amount, account_name)| {
                 Payment { customer_id, amount, account_name }
             },
         ).expect("Select didn't work");
-
+    // all the sum() work here is on the db. We get a nice single row with one cell for the
+    // count. So this is pretty fixed size.
     let row_count: Result<std::vec::Vec<String>> = conn.query("SELECT count(1) from payment");
     println!("History row count: {:?}", row_count);
     println!("Yay!\n\n");
 }
 
 fn main() -> (){
+    // this is a little contrived.
+    // I'm doing the db setup and going into a loop. Thought process is:
+    //
+    // If the conn breaks, the code should stop.
+    //
+    // I'm intentionally not doing a ping() check or reconnect in order to make
+    // this stuff as brittle as possible. 
+    //
+    // Essentially, if this works then we know we aren't dropping anything.
     let conf = Ini::load_from_file("db-test.ini").expect("Unable to load config");
     let config = conf.section(Some("config")).expect("Unable to read ini");
     let url = config.get("db_url").expect("No db_url section found");
