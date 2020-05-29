@@ -1,5 +1,7 @@
 extern crate mysql;
+extern crate ini;
 
+use ini::Ini;
 use mysql::*;
 use mysql::prelude::*;
 //use mysql::Error;
@@ -56,7 +58,10 @@ fn check_db_pulse(mut conn: mysql::PooledConn){
 }
 
 fn main() -> (){
-    let url = "mysql://root:@localhost:3306/pulse_test";
+    let conf = Ini::load_from_file("db-test.ini").expect("Unable to load config");
+    let config = conf.section(Some("config")).expect("Unable to read ini");
+    let url = config.get("db_url").expect("No db_url section found");
+    println!("Connecting to: {}", url);
     let pool = Pool::new(url).expect("url didn't parse");
     while ! std::path::Path::new("./disable-test.txt").exists() {
         let conn = pool.get_conn().expect("Connection didn't work");        

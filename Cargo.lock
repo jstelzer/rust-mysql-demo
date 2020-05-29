@@ -16,6 +16,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "ahash"
+version = "0.3.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2f3e0bf23f51883cce372d5d5892211236856e4bb37fb942e1eb135ee0f146e3"
+
+[[package]]
 name = "aho-corasick"
 version = "0.7.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -226,6 +232,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "dlv-list"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1b391911b9a786312a10cb9d2b3d0735adfd5a8113eb3648de26a75e91b0826c"
+dependencies = [
+ "rand",
+]
+
+[[package]]
 name = "failure"
 version = "0.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -307,8 +322,18 @@ version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8e6073d0ca812575946eb5f35ff68dbe519907b25c42530389ff946dc84c6ead"
 dependencies = [
- "ahash",
+ "ahash 0.2.18",
  "autocfg 0.1.7",
+]
+
+[[package]]
+name = "hashbrown"
+version = "0.7.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "96282e96bfcd3da0d3aa9938bedf1e50df3269b6db08b4876d2da0bb1a0841cf"
+dependencies = [
+ "ahash 0.3.5",
+ "autocfg 1.0.0",
 ]
 
 [[package]]
@@ -403,7 +428,7 @@ version = "0.4.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9e488db3a9e108382265a30764f43cfc87517322e5d04ae0603b32a33461dca3"
 dependencies = [
- "hashbrown",
+ "hashbrown 0.6.3",
 ]
 
 [[package]]
@@ -455,6 +480,7 @@ name = "mysql-pulse"
 version = "0.1.0"
 dependencies = [
  "mysql",
+ "rust-ini",
 ]
 
 [[package]]
@@ -614,6 +640,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "ordered-multimap"
+version = "0.2.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e88f947c6799d5eff50e6cf8a2365c17ac4aa8f8f43aceeedc29b616d872a358"
+dependencies = [
+ "dlv-list",
+ "hashbrown 0.7.2",
+]
+
+[[package]]
 name = "percent-encoding"
 version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -727,6 +763,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4a83fa3702a688b9359eccba92d153ac33fd2e8462f9e0e3fdf155239ea7792e"
 dependencies = [
  "winapi",
+]
+
+[[package]]
+name = "rust-ini"
+version = "0.15.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9c609fa8151080b18c38d39e09d1e55d6301d5610428ff804d0d59c4bac15cf7"
+dependencies = [
+ "cfg-if",
+ "ordered-multimap",
 ]
 
 [[package]]
