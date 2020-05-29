@@ -1,7 +1,8 @@
-#[macro_use()]
 extern crate mysql;
+
 use mysql::*;
 use mysql::prelude::*;
+//use mysql::Error;
 
 #[derive(Debug, PartialEq, Eq)]
 struct Payment {
@@ -9,16 +10,16 @@ struct Payment {
     amount: i32,
     account_name: Option<String>,
 }
-fn do_db_shit() -> () {
-    let url = "mysql://root:@localhost:3306/pulse_test";
-    let pool = Pool::new(url).expect("url didn't parse");
-    let mut conn = pool.get_conn().expect("Connection didn't work");
+fn check_db_pulse(mut conn: mysql::PooledConn){
+
     // Let's create a table for payments.
     conn.query_drop(
         r"CREATE  TABLE IF NOT EXISTS payment (
+            row_num int NOT NULL AUTO_INCREMENT,
             customer_id int not null,
             amount int not null,
-            account_name text
+            account_name text,
+            PRIMARY KEY (row_num)
         )").unwrap();
 
     let payments = vec![
@@ -41,7 +42,7 @@ fn do_db_shit() -> () {
     ).expect("Inserts failed");
 
     // Let's select payments from database. Type inference should do the trick here.
-    let selected_payments = conn
+    let _selected_payments = conn
         .query_map(
             "SELECT customer_id, amount, account_name from payment",
             |(customer_id, amount, account_name)| {
@@ -49,18 +50,16 @@ fn do_db_shit() -> () {
             },
         ).expect("Select didn't work");
 
-    // Let's make sure, that `payments` equals to `selected_payments`.
-    // Mysql gives no guaranties on order of returned rows
-    // without `ORDER BY`, so assume we are lucky.
-    //    assert_eq!(payments, selected_payments);
-    println!("{:?}", selected_payments);
-    println!("Yay!");
+    let row_count: Result<std::vec::Vec<String>> = conn.query("SELECT count(1) from payment");
+    println!("History row count: {:?}", row_count);
+    println!("Yay!\n\n");
 }
 
 fn main() -> (){
-    let running = true;
-    while running {
-        println!("Doing db stuff...");
-        do_db_shit();
+    let url = "mysql://root:@localhost:3306/pulse_test";
+    let pool = Pool::new(url).expect("url didn't parse");
+    while ! std::path::Path::new("./disable-test.txt").exists() {
+        let conn = pool.get_conn().expect("Connection didn't work");        
+        check_db_pulse(conn);
     }
 }
