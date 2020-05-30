@@ -191,6 +191,7 @@ fn main() -> (){
             let conn = pool.get_conn().expect("Connection didn't work");        
             check_db_pulse(conn);
         }
+        println!("The 'stop file' exists. Terminating loop.");
     } else {
         let conn = pool.get_conn().expect("Unable to get db connection for cleanup");
         cleanup(conn);
