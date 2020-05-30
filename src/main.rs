@@ -152,8 +152,8 @@ fn generate_mysql_url(args: &CmdlineArgs) -> String
 [11:38 AM] shepmaster: Change it to take a reference, not ownership
 [11:39 AM] shepmaster: (and let url = generate_mysql_url(&args); later on)
 */
-
 fn generate_mysql_url(args: &CmdlineArgs) -> String {
+    //NB: rust made the pointer deref magic.... nice.
     format!("mysql://{}:{}@{}:{}/{}", args.username, args.password, args.hostname, args.port, args.dbname)
 }
 
@@ -182,6 +182,7 @@ fn main() -> (){
     // Essentially, if this works then we know we aren't dropping anything.
     //[Note] move occurs because `args` has type `CmdlineArgs`, which does not implement the `Copy` trait
     let args = parse_args();
+    //NB: passing a pointer doesn't change ownership. GC will happen here still when args goes out of scope.
     let url = generate_mysql_url(&args);
     println!("Connecting to: {}", url);
     let pool = Pool::new(url).expect("url didn't parse");
