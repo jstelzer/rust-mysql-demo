@@ -13,6 +13,19 @@ struct Payment {
     account_name: Option<String>,
 }
 
+struct CmdlineArgs {
+    hostname: String,
+    username: String,
+    password: String,
+    port: String,
+    dbname: String,
+    cleanup: bool
+}
+
+fn cleanup(mut conn: mysql::PooledConn ){
+    conn.query_drop(r"DROP TABLE IF EXISTS payment").unwrap();
+}
+
 fn check_db_pulse(mut conn: mysql::PooledConn){
 
     // Let's create a table for payments.
@@ -69,7 +82,7 @@ prompt-for-password
 port
 database-name
 */
-fn generate_mysql_url() -> String {
+fn parse_args() -> CmdlineArgs {
     let matches = App::new("Mysql pulse checker 9000")
     .version("0.0.1")
     .author("Jason Stelzer <jason.stelzer@gmail.com>")
@@ -103,22 +116,50 @@ fn generate_mysql_url() -> String {
         .long("prompt")
         .about("Prompt for a password via stdin")
         .takes_value(false))
+    .arg(Arg::with_name("cleanup")
+        .short('c')
+        .long("cleanup")
+        .about("Cleanup (drop) the table we test with")
+        .takes_value(false))
     .get_matches();
     let mut password: String = String::new();
     if matches.is_present("prompt"){
         password = get_password();
+    }
+    let mut cleanup = false;
+    if matches.is_present("cleanup"){
+        cleanup = true;
     }
     let p: &str = &password[..];
     let h = matches.value_of("hostname").unwrap();
     let u = matches.value_of("username").unwrap();
     let port = matches.value_of("port").unwrap();
     let dbname = matches.value_of("dbname").unwrap();
-    format!("mysql://{}:{}@{}:{}/{}", u, p, h, port, dbname)
+    let args : CmdlineArgs = CmdlineArgs{
+                            hostname: h.to_owned(),
+                            username: u.to_owned(),
+                            password: p.to_owned(),
+                            port: port.to_owned(),
+                            dbname: dbname.to_owned(),
+                            cleanup: cleanup.to_owned()
+                          };
+    return args;
+}
+/*
+ shepmaster: @jps 
+
+fn generate_mysql_url(args: &CmdlineArgs) -> String
+[11:38 AM] shepmaster: Change it to take a reference, not ownership
+[11:39 AM] shepmaster: (and let url = generate_mysql_url(&args); later on)
+*/
+
+fn generate_mysql_url(args: &CmdlineArgs) -> String {
+    format!("mysql://{}:{}@{}:{}/{}", args.username, args.password, args.hostname, args.port, args.dbname)
 }
 
 fn get_password() -> String {
     let mut buffer = String::new();
-    println!("Enter your password:");
+    println!("Enter the database password:");
     io::stdin().read_line(&mut buffer).expect("Unable to read stdin.");
     if buffer.ends_with('\n') {
         buffer.pop();
@@ -139,11 +180,18 @@ fn main() -> (){
     // this stuff as brittle as possible. 
     //
     // Essentially, if this works then we know we aren't dropping anything.
-    let url = generate_mysql_url();
+    //[Note] move occurs because `args` has type `CmdlineArgs`, which does not implement the `Copy` trait
+    let args = parse_args();
+    let url = generate_mysql_url(&args);
     println!("Connecting to: {}", url);
     let pool = Pool::new(url).expect("url didn't parse");
-    while ! std::path::Path::new("./disable-test.txt").exists() {
-        let conn = pool.get_conn().expect("Connection didn't work");        
-        check_db_pulse(conn);
+    if ! &args.cleanup {
+        while ! std::path::Path::new("./disable-test.txt").exists() {
+            let conn = pool.get_conn().expect("Connection didn't work");        
+            check_db_pulse(conn);
+        }
+    } else {
+        let conn = pool.get_conn().expect("Unable to get db connection for cleanup");
+        cleanup(conn);
     }
 }
