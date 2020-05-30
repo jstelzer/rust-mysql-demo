@@ -25,3 +25,4 @@ yum group install "Development Tools"
 yum install openssl-devel
 
 Then installed rust via rustup.
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
