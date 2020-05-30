@@ -69,19 +69,6 @@ prompt-for-password
 port
 database-name
 */
-fn get_password() -> String {
-    let mut buffer = String::new();
-    println!("Enter your password:");
-    io::stdin().read_line(&mut buffer).expect("Unable to read stdin.");
-    if buffer.ends_with('\n') {
-        buffer.pop();
-        if buffer.ends_with('\r') {
-            buffer.pop();
-        }
-    }
-    buffer
-}
-
 fn generate_mysql_url() -> String {
     let matches = App::new("Mysql pulse checker 9000")
     .version("0.0.1")
@@ -91,20 +78,24 @@ fn generate_mysql_url() -> String {
         .short('h')
         .long("hostname")
         .about("Hostname to connect to")
+        .required(true)
         .takes_value(true))
     .arg(Arg::with_name("username")
         .short('u')
         .long("username")
         .about("Username to connect as")
+        .required(true)
         .takes_value(true))  
     .arg(Arg::with_name("port")
         .short('p')
         .long("port")
         .about("The tcp port number to connect to")
+        .required(true)
         .takes_value(true))
     .arg(Arg::with_name("dbname")
         .short('d')
         .long("dbname")
+        .required(true)
         .about("The database name to 'use' on mysql")
         .takes_value(true))
     .arg(Arg::with_name("prompt")
@@ -124,6 +115,20 @@ fn generate_mysql_url() -> String {
     let dbname = matches.value_of("dbname").unwrap();
     format!("mysql://{}:{}@{}:{}/{}", u, p, h, port, dbname)
 }
+
+fn get_password() -> String {
+    let mut buffer = String::new();
+    println!("Enter your password:");
+    io::stdin().read_line(&mut buffer).expect("Unable to read stdin.");
+    if buffer.ends_with('\n') {
+        buffer.pop();
+        if buffer.ends_with('\r') {
+            buffer.pop();
+        }
+    }
+    buffer
+}
+
 fn main() -> (){
     // this is a little contrived.
     // I'm doing the db setup and going into a loop. Thought process is:
