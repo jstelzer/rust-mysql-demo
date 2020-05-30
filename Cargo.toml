@@ -8,5 +8,4 @@ edition = "2018"
 
 [dependencies]
 mysql = "*"
-rust-ini = "0.15"
 clap = "3.0.0-beta.1"

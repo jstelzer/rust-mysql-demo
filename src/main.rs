@@ -1,12 +1,10 @@
 extern crate mysql;
-extern crate ini;
 extern crate clap;
 
-use ini::Ini;
 use mysql::*;
 use mysql::prelude::*;
 use clap::{Arg, App};
-use std::io::{self, Read};
+use std::io::{self};
 
 #[derive(Debug, PartialEq, Eq)]
 struct Payment {
