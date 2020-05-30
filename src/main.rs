@@ -1,9 +1,12 @@
 extern crate mysql;
 extern crate ini;
+extern crate clap;
 
 use ini::Ini;
 use mysql::*;
 use mysql::prelude::*;
+use clap::{Arg, App};
+use std::io::{self, Read};
 
 #[derive(Debug, PartialEq, Eq)]
 struct Payment {
@@ -59,6 +62,70 @@ fn check_db_pulse(mut conn: mysql::PooledConn){
     println!("Yay!\n\n");
 }
 
+/*
+i suppose i could do the right thing with args.....
+
+hostname
+username
+prompt-for-password
+port
+database-name
+*/
+fn get_password() -> String {
+    let mut buffer = String::new();
+    println!("Enter your password:");
+    io::stdin().read_line(&mut buffer).expect("Unable to read stdin.");
+    if buffer.ends_with('\n') {
+        buffer.pop();
+        if buffer.ends_with('\r') {
+            buffer.pop();
+        }
+    }
+    buffer
+}
+
+fn generate_mysql_url() -> String {
+    let matches = App::new("Mysql pulse checker 9000")
+    .version("0.0.1")
+    .author("Jason Stelzer <jason.stelzer@gmail.com>")
+    .about("Keeps a mysql database busy while you do potentially disruptive RDS things to it.")
+    .arg(Arg::with_name("hostname")
+        .short('h')
+        .long("hostname")
+        .about("Hostname to connect to")
+        .takes_value(true))
+    .arg(Arg::with_name("username")
+        .short('u')
+        .long("username")
+        .about("Username to connect as")
+        .takes_value(true))  
+    .arg(Arg::with_name("port")
+        .short('p')
+        .long("port")
+        .about("The tcp port number to connect to")
+        .takes_value(true))
+    .arg(Arg::with_name("dbname")
+        .short('d')
+        .long("dbname")
+        .about("The database name to 'use' on mysql")
+        .takes_value(true))
+    .arg(Arg::with_name("prompt")
+        .short('P')
+        .long("prompt")
+        .about("Prompt for a password via stdin")
+        .takes_value(false))
+    .get_matches();
+    let mut password: String = String::new();
+    if matches.is_present("prompt"){
+        password = get_password();
+    }
+    let p: &str = &password[..];
+    let h = matches.value_of("hostname").unwrap();
+    let u = matches.value_of("username").unwrap();
+    let port = matches.value_of("port").unwrap();
+    let dbname = matches.value_of("dbname").unwrap();
+    format!("mysql://{}:{}@{}:{}/{}", u, p, h, port, dbname)
+}
 fn main() -> (){
     // this is a little contrived.
     // I'm doing the db setup and going into a loop. Thought process is:
@@ -69,9 +136,7 @@ fn main() -> (){
     // this stuff as brittle as possible. 
     //
     // Essentially, if this works then we know we aren't dropping anything.
-    let conf = Ini::load_from_file("db-test.ini").expect("Unable to load config");
-    let config = conf.section(Some("config")).expect("Unable to read ini");
-    let url = config.get("db_url").expect("No db_url section found");
+    let url = generate_mysql_url();
     println!("Connecting to: {}", url);
     let pool = Pool::new(url).expect("url didn't parse");
     while ! std::path::Path::new("./disable-test.txt").exists() {
